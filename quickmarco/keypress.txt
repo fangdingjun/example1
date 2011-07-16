@@ -1,0 +1,42 @@
+Delay 500
+k1=WaitClick()
+call GetCursorPos(x1,y1)
+Delay 500
+
+k1=WaitClick()
+call GetCursorPos(x2,y2)
+Delay 500
+
+k1=WaitClick()
+call GetCursorPos(x3,y3)
+Delay 500
+
+k1=WaitClick()
+call GetCursorPos(x4,y4)
+Delay 500
+
+i=0
+Do while i<4
+
+   MoveTo x1,y1
+   LeftClick 1
+   Delay 500
+
+
+   MoveTo x2,y2
+   LeftClick 1
+   Delay 500
+   
+   MoveTo x3,y3
+   LeftClick 1
+   Delay 500
+   
+   MoveTo x4,y4
+   LeftClick 1
+   Delay 500
+   
+   KeyPress 13,1
+   Delay 500
+   
+   i=i+1
+Loop

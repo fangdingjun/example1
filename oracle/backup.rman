@@ -1,0 +1,27 @@
+#
+#configure retention policy to recovery window of 3 days;
+#configure backup optimization on;
+run {
+    allocate channel c1 type disk;
+    allocate channel c2 type disk;
+    allocate channel c3 type disk;
+    
+    #check backup
+    crosscheck backupset;
+    crosscheck archivelog all;
+    #delete expired backups
+    delete noprompt expired backup;
+    delete noprompt obsolete;
+    delete noprompt expired archivelog all;
+    
+    #backup a compressed archive
+    backup as compressed backupset
+        incremental level 0
+        format '/home/zhuzhu/backup/db_%U_%T'
+        database plus archivelog delete all input
+        format '/home/zhuzhu/backup/log_%U_%T';
+    release channel c1;
+    release channel c2;
+    release channel c3;
+}
+exit;

@@ -1,0 +1,27 @@
+#
+#shutdown database
+shutdown immediate;
+startup nomount;
+reset database to incarnation 4;
+#startup mount;
+
+run
+{
+    allocate channel c1 type disk;
+    allocate channel c2 type disk;
+    allocate channel c3 type disk;
+
+    #point in time restore
+    set until time '2010-01-02 10:26:00';
+    restore controlfile;
+    alter database mount;
+    restore database;
+    recover database;
+    release channel c1;
+    release channel c2;
+    release channel c3;
+}
+
+#open database
+alter database open resetlogs;
+exit;

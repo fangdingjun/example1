@@ -1,0 +1,23 @@
+#!/usr/bin/expect -f
+
+set host [lindex $argv 0]
+set user [lindex $argv 1]
+set passwd [lindex $argv 2]
+set key_file [lindex $argv 3]
+
+set timeout 20
+
+spawn sftp $user@$host
+expect -nocase -re "Password:*" {
+    send "$passwd\r"
+}
+expect -nocase "sftp*" {
+    send "mkdir -p .ssh\r"
+}
+
+expect -nocase "sftp*" {
+    send "put $key_file .ssh/authorized_keys\r"
+}
+expect -nocase "sftp*" {
+    send "quit\r"
+}

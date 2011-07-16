@@ -1,0 +1,6 @@
+SetHandler mod_python
+PythonHandler django.core.handlers.modpython
+SetEnv DJANGO_SETTINGS_MODULE myweb.settings
+PythonOption django.root /test/myweb
+PythonDebug On
+PythonPath "['/usr/local/www/apache22/data/test'] + sys.path"

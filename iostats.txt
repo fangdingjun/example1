@@ -1,0 +1,163 @@
+1	I/O statistics fields
+2	---------------
+3	
+4	Last modified Sep 30, 2003
+5	
+6	Since 2.4.20 (and some versions before, with patches), and 2.5.45,
+7	more extensive disk statistics have been introduced to help measure disk
+8	activity. Tools such as sar and iostat typically interpret these and do
+9	the work for you, but in case you are interested in creating your own
+10	tools, the fields are explained here.
+11	
+12	In 2.4 now, the information is found as additional fields in
+13	/proc/partitions.  In 2.6, the same information is found in two
+14	places: one is in the file /proc/diskstats, and the other is within
+15	the sysfs file system, which must be mounted in order to obtain
+16	the information. Throughout this document we'll assume that sysfs
+17	is mounted on /sys, although of course it may be mounted anywhere.
+18	Both /proc/diskstats and sysfs use the same source for the information
+19	and so should not differ.
+20	
+21	Here are examples of these different formats:
+22	
+23	2.4:
+24	   3     0   39082680 hda 446216 784926 9550688 4382310 424847 312726 5922052 19310380 0 3376340 23705160
+25	   3     1    9221278 hda1 35486 0 35496 38030 0 0 0 0 0 38030 38030
+26	
+27	
+28	2.6 sysfs:
+29	   446216 784926 9550688 4382310 424847 312726 5922052 19310380 0 3376340 23705160
+30	   35486    38030    38030    38030
+31	
+32	2.6 diskstats:
+33	   3    0   hda 446216 784926 9550688 4382310 424847 312726 5922052 19310380 0 3376340 23705160
+34	   3    1   hda1 35486 38030 38030 38030
+35	
+36	On 2.4 you might execute "grep 'hda ' /proc/partitions". On 2.6, you have
+37	a choice of "cat /sys/block/hda/stat" or "grep 'hda ' /proc/diskstats".
+38	The advantage of one over the other is that the sysfs choice works well
+39	if you are watching a known, small set of disks.  /proc/diskstats may
+40	be a better choice if you are watching a large number of disks because
+41	you'll avoid the overhead of 50, 100, or 500 or more opens/closes with
+42	each snapshot of your disk statistics.
+43	
+44	In 2.4, the statistics fields are those after the device name. In
+45	the above example, the first field of statistics would be 446216.
+46	By contrast, in 2.6 if you look at /sys/block/hda/stat, you'll
+47	find just the eleven fields, beginning with 446216.  If you look at
+48	/proc/diskstats, the eleven fields will be preceded by the major and
+49	minor device numbers, and device name.  Each of these formats provide
+50	eleven fields of statistics, each meaning exactly the same things.
+51	All fields except field 9 are cumulative since boot.  Field 9 should
+52	go to zero as I/Os complete; all others only increase.  Yes, these are
+53	32 bit unsigned numbers, and on a very busy or long-lived system they
+54	may wrap. Applications should be prepared to deal with that; unless
+55	your observations are measured in large numbers of minutes or hours,
+56	they should not wrap twice before you notice them.
+57	
+58	Each set of stats only applies to the indicated device; if you want
+59	system-wide stats you'll have to find all the devices and sum them all up.
+60	
+61	Field  1 -- # of reads completed
+62	    This is the total number of reads completed successfully.
+63	Field  2 -- # of reads merged, field 6 -- # of writes merged
+64	    Reads and writes which are adjacent to each other may be merged for
+65	    efficiency.  Thus two 4K reads may become one 8K read before it is
+66	    ultimately handed to the disk, and so it will be counted (and queued)
+67	    as only one I/O.  This field lets you know how often this was done.
+68	Field  3 -- # of sectors read
+69	    This is the total number of sectors read successfully.
+70	Field  4 -- # of milliseconds spent reading
+71	    This is the total number of milliseconds spent by all reads (as
+72	    measured from __make_request() to end_that_request_last()).
+73	Field  5 -- # of writes completed
+74	    This is the total number of writes completed successfully.
+75	Field  7 -- # of sectors written
+76	    This is the total number of sectors written successfully.
+77	Field  8 -- # of milliseconds spent writing
+78	    This is the total number of milliseconds spent by all writes (as
+79	    measured from __make_request() to end_that_request_last()).
+80	Field  9 -- # of I/Os currently in progress
+81	    The only field that should go to zero. Incremented as requests are
+82	    given to appropriate struct request_queue and decremented as they finish.
+83	Field 10 -- # of milliseconds spent doing I/Os
+84	    This field is increases so long as field 9 is nonzero.
+85	Field 11 -- weighted # of milliseconds spent doing I/Os
+86	    This field is incremented at each I/O start, I/O completion, I/O
+87	    merge, or read of these stats by the number of I/Os in progress
+88	    (field 9) times the number of milliseconds spent doing I/O since the
+89	    last update of this field.  This can provide an easy measure of both
+90	    I/O completion time and the backlog that may be accumulating.
+91	
+92	
+93	To avoid introducing performance bottlenecks, no locks are held while
+94	modifying these counters.  This implies that minor inaccuracies may be
+95	introduced when changes collide, so (for instance) adding up all the
+96	read I/Os issued per partition should equal those made to the disks ...
+97	but due to the lack of locking it may only be very close.
+98	
+99	In 2.6, there are counters for each cpu, which made the lack of locking
+100	almost a non-issue.  When the statistics are read, the per-cpu counters
+101	are summed (possibly overflowing the unsigned 32-bit variable they are
+102	summed to) and the result given to the user.  There is no convenient
+103	user interface for accessing the per-cpu counters themselves.
+104	
+105	Disks vs Partitions
+106	-------------------
+107	
+108	There were significant changes between 2.4 and 2.6 in the I/O subsystem.
+109	As a result, some statistic information disappeared. The translation from
+110	a disk address relative to a partition to the disk address relative to
+111	the host disk happens much earlier.  All merges and timings now happen
+112	at the disk level rather than at both the disk and partition level as
+113	in 2.4.  Consequently, you'll see a different statistics output on 2.6 for
+114	partitions from that for disks.  There are only *four* fields available
+115	for partitions on 2.6 machines.  This is reflected in the examples above.
+116	
+117	Field  1 -- # of reads issued
+118	    This is the total number of reads issued to this partition.
+119	Field  2 -- # of sectors read
+120	    This is the total number of sectors requested to be read from this
+121	    partition.
+122	Field  3 -- # of writes issued
+123	    This is the total number of writes issued to this partition.
+124	Field  4 -- # of sectors written
+125	    This is the total number of sectors requested to be written to
+126	    this partition.
+127	
+128	Note that since the address is translated to a disk-relative one, and no
+129	record of the partition-relative address is kept, the subsequent success
+130	or failure of the read cannot be attributed to the partition.  In other
+131	words, the number of reads for partitions is counted slightly before time
+132	of queuing for partitions, and at completion for whole disks.  This is
+133	a subtle distinction that is probably uninteresting for most cases.
+134	
+135	More significant is the error induced by counting the numbers of
+136	reads/writes before merges for partitions and after for disks. Since a
+137	typical workload usually contains a lot of successive and adjacent requests,
+138	the number of reads/writes issued can be several times higher than the
+139	number of reads/writes completed.
+140	
+141	In 2.6.25, the full statistic set is again available for partitions and
+142	disk and partition statistics are consistent again. Since we still don't
+143	keep record of the partition-relative address, an operation is attributed to
+144	the partition which contains the first sector of the request after the
+145	eventual merges. As requests can be merged across partition, this could lead
+146	to some (probably insignificant) inaccuracy.
+147	
+148	Additional notes
+149	----------------
+150	
+151	In 2.6, sysfs is not mounted by default.  If your distribution of
+152	Linux hasn't added it already, here's the line you'll want to add to
+153	your /etc/fstab:
+154	
+155	none /sys sysfs defaults 0 0
+156	
+157	
+158	In 2.6, all disk statistics were removed from /proc/stat.  In 2.4, they
+159	appear in both /proc/partitions and /proc/stat, although the ones in
+160	/proc/stat take a very different format from those in /proc/partitions
+161	(see proc(5), if your system has it.)
+162	
+163	-- ricklind[AT]us.ibm[DOT]com

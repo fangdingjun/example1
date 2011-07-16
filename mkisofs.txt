@@ -1,0 +1,30 @@
+mkisofs -o $ISONAME.iso -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -l -allow-leading-dots -relaxed-filenames -joliet-long -max-iso9660-filenames -D -R -J -T -V $VOLID -v /path/to/directory/full/of/files
+The switches are as follows:
+
+-l = enables Long file names
+-allow-leading-dots = enables filenames with a period in the beginning.
+-max-iso9660-filenames: LOOK UP MAN FILE
+-R = enables RockRidge.
+-J = Enables Joliet support for long file names.
+-T = generates a Trans.tbl in each directory which is used on non-RR capable systems to help establish correct file names.
+-joliet-long = LOOK UP MAN FILE
+-V = Volume Name
+-D = Do not use deep directory relocation, and instead just pack them in the way we see them.
+If ISO9660:1999 has not been selected, this violates the ISO9660 standard, but it happens to work on many systems. Use with caution.
+-relaxed-filenames = LOOK UP MAN FILE
+
+This will create a bootable dvd that also contains extra files. Remember to check the filenames and file paths to make sure that long file names work.
+
+ mkisofs -V SLES9_SP2 -r -J -l -L -iso-level 4 -P "SUSE Linux AG" \
+-b boot/loader/isolinux.bin -c boot/loader/boot.cat -no-emul-boot \
+-boot-load-size 4 -boot-info-table -graft-points -o /home/user/SLES9_SP2_DVD.iso \
+/home/user/installation/sles
+
+# mkisofs -v -V SU100OSS.001 -r -J -l -L -P "SuSE Linux AG" \
+     -b "boot/i386/loader/isolinux.bin" \
+     -c "boot/i386/loader/boot.cat" \
+     -no-emul-boot -boot-load-size 4 -boot-info-table \
+     -graft-points -o /tmp/openSuSE-10.0-beta2-DVD.iso \
+     /tmp/sl10b2dvd
+     
+      mkisofs -o ../Suse_10_x86_64_SP1.iso -b boot/x86_64/loader/isolinux.bin -c boot/x86_64/loader/boot.cat  -no-emul-boot -V Suse_10_x86_64_SP1 -r -J -l -L -iso-level 4 -P "Suse_10_x86_64_sp1" -boot-load-size 4 -boot-info-table -graft-points .
