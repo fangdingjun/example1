@@ -24,13 +24,13 @@ int main(int argc, char **argv)
     } msg_rbuf;
 
     struct msqid_ds msg_ginfo, msg_sinfo;
-    char *msgpath = "/etc/fstab";
+    char *msgpath = "/etc/mtab";
     key = ftok(msgpath, 'a');
     gflags = IPC_CREAT | IPC_EXCL;
     msgid = msgget(key, gflags | 00666);
 
     if (msgid == -1) {
-        printf("msg create error\n");
+        perror("msg create error");
         return -1;
     }
     //创建一个消息队列后，输出消息队列缺省属性
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 
     reval = msgsnd(msgid, &msg_sbuf, sizeof(msg_sbuf.mtext), sflags);
     if (reval == -1) {
-        printf("message send error\n");
+        perror("message send error");
     }
     //发送一个消息后，输出消息队列属性
     msg_stat(msgid, msg_ginfo);
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 
     reval = msgrcv(msgid, &msg_rbuf, 4, 10, rflags);
     if (reval == -1)
-        printf("read msg error\n");
+        perror("read msg error");
     else
         printf("read from msg queue %d bytes\n", reval);
     //从消息队列中读出消息后，输出消息队列属性
@@ -62,14 +62,14 @@ int main(int argc, char **argv)
     //注意这里设置的值大于缺省值
     reval = msgctl(msgid, IPC_SET, &msg_sinfo);
     if (reval == -1) {
-        printf("msg set info error\n");
-        return -1;
+        perror("msg set info error");
+        //return -1;
     }
     msg_stat(msgid, msg_ginfo);
     //验证设置消息队列属性
     reval = msgctl(msgid, IPC_RMID, NULL);      //删除消息队列
     if (reval == -1) {
-        printf("unlink msg queue error\n");
+        perror("unlink msg queue error");
         return -1;
     }
     return 0;

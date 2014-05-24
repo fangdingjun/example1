@@ -4,7 +4,7 @@
 
 int toten(char *argv, char **rs)
 {
-    const char *delim = "\r\n";
+    const char *delim = " \t\r\n";
     char *toten;
 
     toten = strtok(argv, delim);
